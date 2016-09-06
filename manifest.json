@@ -1,0 +1,7 @@
+{
+  "name": "polymer-quill",
+  "short_name": "polymer-quill",
+  "description": "quill",
+  "start_url": "/",
+  "display": "standalone"
+}
