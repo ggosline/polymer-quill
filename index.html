@@ -8,24 +8,29 @@
     <link rel="manifest" href="/manifest.json">
     <script src="./bower_components/webcomponentsjs/webcomponents-lite.js"></script>
     <link rel="import" href="./src/polymer-quill-app/polymer-quill-app.html">
-    <link href="./node_modules/quill/dist/quill.bubble.css" rel="stylesheet">
-    <script src="./node_modules/quill/dist/quill.js"></script>
-    <script src="./bower_components/ag-grid/dist/ag-grid.js"></script>
-    <script src="ag-grid-test.js"></script>
+    <link href="http://cdn.quilljs.com/1.0.0-rc.0/quill.bubble.css" rel="stylesheet">
+    <link rel="import" href="./bower_components/paper-material/paper-material.html">
+    <link rel="import" href="./bower_components/vaadin-split-layout/vaadin-split-layout.html">
+    <script src="http://cdn.quilljs.com/1.0.0-rc.0/quill.js"></script>
+    <script src="./bower_components/ag-grid/dist/ag-grid.js?ignore=notused29"></script>
+
   </head>
   <body>
 
     <polymer-quill-app></polymer-quill-app>
-    <div id="editor"></div>
-    <ag-grid style="height: 140px; display: block;" id="myGrid" class="ag-fresh"></ag-grid>
 
-  <script>
-    var quill = new Quill('#editor', {
-      theme: 'bubble'   // Specify theme in configuration
-      });
-    quill.setText('We are testing to pretoria');
-    quill.formatText(5,10,'italic',true)
-  </script>
+    <vaadin-split-layout vertical>
+
+    <div>
+    <ag-grid style="height: 400px; display: block;" id="myGrid" class="ag-fresh"></ag-grid>
+    </div>
+
+    <div id="editor" style="height: 400px; display: block;"></div>
+
+    </vaadin-split-layout>
+
+    <script src="ag-grid-test.js"></script>
+
   </body>
 
 </html>

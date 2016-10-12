@@ -1,22 +1,26 @@
+"use strict";
+
 agGrid.initialiseAgGridWithWebComponents();
 
 var columnDefs = [
-   {headerName: "Taxonno", field: "taxonNo"},
-{headerName: "Flora", field: "flora"},
-{headerName: "Family", field: "family"},
-{headerName: "Taxon", field: "taxon"},
-{headerName: "Mainsubject", field: "mainsubject"},
-{headerName: "Subject", field: "subject"},
-{headerName: "Subpart", field: "subpart"},
-{headerName: "Category", field: "category"},
-{headerName: "Value", field: "value"},
-{headerName: "Mod", field: "mod"},
-{headerName: "Posit", field: "posit"},
-{headerName: "Phase", field: "phase"},
-{headerName: "Presence", field: "presence"},
-{headerName: "Start", field: "start"},
-{headerName: "End", field: "end"},
+    {headerName: "Taxonno", field: "taxonNo", width: 150},
+    {headerName: "Flora", field: "flora", width: 150},
+    {headerName: "Family", field: "family", width: 150},
+    {headerName: "Taxon", field: "taxon", width: 150},
+    {headerName: "Mainsubject", field: "mainsubject", width: 150},
+    {headerName: "Subject", field: "subject", width: 150},
+    {headerName: "Subpart", field: "subpart", width: 150},
+    {headerName: "Category", field: "category", width: 150},
+    {headerName: "Value", field: "value", width: 150},
+    {headerName: "Mod", field: "mod", width: 150},
+    {headerName: "Posit", field: "posit", width: 150},
+    {headerName: "Phase", field: "phase", width: 150},
+    {headerName: "Presence", field: "presence", width: 150},
+    {headerName: "Start", field: "start", width: 150},
+    {headerName: "End", field: "end", width: 150},
 ];
+
+
 
 var rowData = [
 	{
@@ -55,14 +59,38 @@ var rowData = [
 	}
 ];
 
-var gridOptions = {
-    columnDefs: columnDefs,
-    rowData: rowData
-};
-
 // wait for the document to be loaded, otherwise
 // grid will not find the div in the document.
 document.addEventListener("DOMContentLoaded", function() {
-    var myAgileGrid = document.querySelector('#myGrid');
+
+    var gridOptions = {
+        columnDefs: columnDefs,
+        rowData: rowData,
+        enableSorting: true,
+        enableColResize: true,
+        enableFilter: true,
+        rowSelection: 'single',
+        onRowSelected: rowSelectedFunc,
+
+    };
+
+    let myAgileGrid = document.querySelector('#myGrid');
     myAgileGrid.setGridOptions(gridOptions);
+
+    let quill = new Quill('#editor', {
+        theme: 'bubble',   // Specify theme in configuration
+        });
+
+    quill.format('size', 14)
+    quill.insertText(0, 'lateral nerves in 8–10 pairs', {'size': 'large', 'italic': true});
+
+    function rowSelectedFunc(event) {
+        // window.alert("row " + event.node.data.start + " selected = " + event.node.selected);
+        let strt = event.node.data.start;
+        let slen = event.node.data.end - event.node.data.start;
+
+        if (event.node.selected) {
+            quill.formatText(0, quill.getLength(), 'background', false);
+            quill.formatText(strt, slen, 'background', 'rgb(102, 185, 102)');}
+        }
 });
