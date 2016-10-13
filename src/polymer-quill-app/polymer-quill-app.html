@@ -8,9 +8,24 @@
       }
     </style>
     <h2>Hello [[prop1]]</h2>
+
+    <vaadin-split-layout vertical>
+    <div>
+      <ag-grid style="height: 400px; display: block;" id="myGrid" class="ag-fresh"></ag-grid>
+    </div>
+
+    <div id="editor" style="height: 400px; display: block;">
+      <quill-element id="ed" theme="bubble"></quill-element>
+    </div>
+    </vaadin-split-layout>
+
   </template>
 
-  <script>
+</dom-module>
+
+<script src="ag-grid-test.js"></script>
+
+<script>
     Polymer({
 
       is: 'polymer-quill-app',
@@ -21,7 +36,31 @@
           value: 'polymer-quill-app',
         },
       },
+    ready: function () {
+        agGrid.initialiseAgGridWithWebComponents();
+        var gridOptions = {
+            columnDefs: columnDefs,
+            rowData: rowData,
+            enableSorting: true,
+            enableColResize: true,
+            enableFilter: true,
+            rowSelection: 'single',
+            onRowSelected: rowSelectedFunc,
+
+        };
+
+        let myGrid = this.$$('#myGrid');
+        myGrid.setGridOptions(gridOptions)
+
+        let myEd = this.$$('#ed');
+
+        myEd.format('size', 14)
+        myEd.insertText(0, 'lateral nerves in 8–10 pairs', {'size': 'large', 'italic': true});
+        },
 
     });
   </script>
-</dom-module>
+
+
+
+

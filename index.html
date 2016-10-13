@@ -8,28 +8,16 @@
     <link rel="manifest" href="/manifest.json">
     <script src="./bower_components/webcomponentsjs/webcomponents-lite.js"></script>
     <link rel="import" href="./src/polymer-quill-app/polymer-quill-app.html">
-    <link href="http://cdn.quilljs.com/1.0.0-rc.0/quill.bubble.css" rel="stylesheet">
     <link rel="import" href="./bower_components/paper-material/paper-material.html">
     <link rel="import" href="./bower_components/vaadin-split-layout/vaadin-split-layout.html">
-    <script src="http://cdn.quilljs.com/1.0.0-rc.0/quill.js"></script>
-    <script src="./bower_components/ag-grid/dist/ag-grid.js?ignore=notused29"></script>
+    <link rel="import" href="./bower_components/quill-element/quill-element.html">
+    <script src="./bower/quill/quill.min.js"></script>
+    <script src="./bower_components/ag-grid/dist/ag-grid.js"></script>
 
   </head>
   <body>
 
     <polymer-quill-app></polymer-quill-app>
-
-    <vaadin-split-layout vertical>
-
-    <div>
-    <ag-grid style="height: 400px; display: block;" id="myGrid" class="ag-fresh"></ag-grid>
-    </div>
-
-    <div id="editor" style="height: 400px; display: block;"></div>
-
-    </vaadin-split-layout>
-
-    <script src="ag-grid-test.js"></script>
 
   </body>
 
