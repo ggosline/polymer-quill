@@ -9,12 +9,21 @@
     </style>
     <h2>Hello [[prop1]]</h2>
 
-    <vaadin-split-layout vertical>
-    <div>
-      <ag-grid style="height: 400px; display: block;" id="myGrid" class="ag-fresh"></ag-grid>
-    </div>
+    <form is="iron-form" id="form" method="post" action="/">
 
-    <div id="editor" style="height: 400px; display: block;">
+      <paper-input name="testinput"></paper-input>
+
+      <paper-button raised click="document.getElementById('form').submit();">
+        Post
+      </paper-button>
+
+    </form>
+    <vaadin-split-layout vertical>
+      <div  style="border: inset">
+        <ag-grid style="min-height: 400px; display: block; " id="myGrid" class="ag-fresh"></ag-grid>
+      </div>
+
+    <div id="editor" style="min-height: 400px; display: block; border-style: ridge; ">
       <quill-element id="ed" theme="bubble"></quill-element>
     </div>
     </vaadin-split-layout>
@@ -33,7 +42,7 @@
       properties: {
         prop1: {
           type: String,
-          value: 'polymer-quill-app',
+          value: 'FlParser',
         },
       },
 
@@ -54,7 +63,7 @@
         myGrid.setGridOptions(gridOptions)
 
         var myEd = this.$$('#ed');
-
+        myEd.addEventListener('text-changed', this._text_changed);
         myEd.format('size', 12)
         myEd.insertText(0, 'lateral nerves in 8–10 pairs', {'size': 'medium', 'italic': false});
         },
@@ -68,7 +77,11 @@
           myEd.formatText(0, myEd.getLength(), 'background', false);
           myEd.formatText(strt, slen, 'background', 'rgb(102, 185, 102)');
         }
-      }
+      },
+
+      _text_changed: function (qDelta) {
+        console.log(this.$$('#ed').getText());
+        }
 
     });
   </script>
