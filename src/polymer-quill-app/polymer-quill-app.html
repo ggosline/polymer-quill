@@ -36,6 +36,7 @@
           value: 'polymer-quill-app',
         },
       },
+
     ready: function () {
         agGrid.initialiseAgGridWithWebComponents();
         var gridOptions = {
@@ -45,18 +46,29 @@
             enableColResize: true,
             enableFilter: true,
             rowSelection: 'single',
-            onRowSelected: rowSelectedFunc,
+            onRowSelected: this._rowSelectedFunc,
 
         };
 
-        let myGrid = this.$$('#myGrid');
+        var myGrid = this.$$('#myGrid');
         myGrid.setGridOptions(gridOptions)
 
-        let myEd = this.$$('#ed');
+        var myEd = this.$$('#ed');
 
-        myEd.format('size', 14)
-        myEd.insertText(0, 'lateral nerves in 8–10 pairs', {'size': 'large', 'italic': true});
+        myEd.format('size', 12)
+        myEd.insertText(0, 'lateral nerves in 8–10 pairs', {'size': 'medium', 'italic': false});
         },
+
+      _rowSelectedFunc: function (event) {
+        // window.alert("row " + event.node.data.start + " selected = " + event.node.selected);
+        let strt = event.node.data.start;
+        let slen = event.node.data.end - event.node.data.start;
+        var myEd = document.querySelector('quill-element');
+        if (event.node.selected) {
+          myEd.formatText(0, myEd.getLength(), 'background', false);
+          myEd.formatText(strt, slen, 'background', 'rgb(102, 185, 102)');
+        }
+      }
 
     });
   </script>

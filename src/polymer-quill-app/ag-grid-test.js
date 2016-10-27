@@ -64,7 +64,7 @@ function rowSelectedFunc(event) {
     let slen = event.node.data.end - event.node.data.start;
 
     if (event.node.selected) {
-        quill.formatText(0, quill.getLength(), 'background', false);
-        quill.formatText(strt, slen, 'background', 'rgb(102, 185, 102)');}
+        this.formatText(0, this.getLength(), 'background', false);
+        this.formatText(strt, slen, 'background', 'rgb(102, 185, 102)');}
     };
 
