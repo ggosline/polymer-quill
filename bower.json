@@ -5,7 +5,8 @@
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
     "ag-grid": "^5.3.1",
-    "quill-element": "^0.0.3"
+    "quill-element": "^0.0.3",
+    "iron-form": "^1.1.4"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
