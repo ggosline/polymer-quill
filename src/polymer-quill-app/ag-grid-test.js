@@ -58,13 +58,3 @@ var rowData = [
 ];
 
 
-function rowSelectedFunc(event) {
-    // window.alert("row " + event.node.data.start + " selected = " + event.node.selected);
-    let strt = event.node.data.start;
-    let slen = event.node.data.end - event.node.data.start;
-
-    if (event.node.selected) {
-        this.formatText(0, this.getLength(), 'background', false);
-        this.formatText(strt, slen, 'background', 'rgb(102, 185, 102)');}
-    };
-

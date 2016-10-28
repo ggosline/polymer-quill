@@ -2,32 +2,49 @@
 
 <dom-module id="polymer-quill-app">
   <template>
+
     <style>
       :host {
         display: block;
       }
     </style>
+
+    <iron-ajax id=ajax"
+          url="http://flparser.azurewebsites.net/characters"
+          params=[[taxon]].json()
+          handle-as="json"
+          last-response="{{ajaxResponse}}"></iron-ajax>
+
     <h2>Hello [[prop1]]</h2>
 
     <form is="iron-form" id="form" method="post" action="/">
 
-      <paper-input name="testinput"></paper-input>
+      <paper-input label="taxonID" value="{{taxon.taxonNo}}"></paper-input>
+      <paper-input label="flora" value="{{taxon.flora}}"></paper-input>
+      <paper-input value="{{taxon.rank}}"></paper-input>
+      <paper-input value="{{taxon.family}}"></paper-input>
+      <paper-input value="{{taxon.genus}}"></paper-input>
+      <paper-input value="{{taxon.species}}"></paper-input>
 
-      <paper-button raised click="document.getElementById('form').submit();">
-        Post
+      <paper-button raised onclick="_callFlParser(event)">
+        Parse Me
       </paper-button>
 
+
     </form>
+
     <vaadin-split-layout vertical>
-      <div  style="border: inset">
-        <ag-grid style="min-height: 400px; display: block; " id="myGrid" class="ag-fresh"></ag-grid>
+
+      <div  style="">
+        <ag-grid style="height: 400px; display: block; " id="myGrid" class="ag-fresh"></ag-grid>
       </div>
 
-    <div id="editor" style="min-height: 400px; display: block; border-style: ridge; ">
+    <div id="editor" on-text-change="_text_changed" style="height: 400px; display: block;  ">
       <quill-element id="ed" theme="bubble"></quill-element>
     </div>
-    </vaadin-split-layout>
 
+    </vaadin-split-layout>
+    <div>[[taxon.description]]</div>
   </template>
 
 </dom-module>
@@ -44,10 +61,19 @@
           type: String,
           value: 'FlParser',
         },
-      },
+        taxon: {
+            type: Object,
 
+            value: {"taxonNo": 666, "rank":"species", "flora":"FZ", "family":"x", "genus":"y", "species":"z", "description":"leaves round"}
+        }
+      },
+      observers: [
+        '_descriptionChanged(taxon.description)'
+      ],
     ready: function () {
+
         agGrid.initialiseAgGridWithWebComponents();
+
         var gridOptions = {
             columnDefs: columnDefs,
             rowData: rowData,
@@ -56,16 +82,14 @@
             enableFilter: true,
             rowSelection: 'single',
             onRowSelected: this._rowSelectedFunc,
-
         };
 
         var myGrid = this.$$('#myGrid');
         myGrid.setGridOptions(gridOptions)
 
         var myEd = this.$$('#ed');
-        myEd.addEventListener('text-changed', this._text_changed);
         myEd.format('size', 12)
-        myEd.insertText(0, 'lateral nerves in 8–10 pairs', {'size': 'medium', 'italic': false});
+        myEd.setText(this.taxon.description);
         },
 
       _rowSelectedFunc: function (event) {
@@ -76,13 +100,21 @@
         if (event.node.selected) {
           myEd.formatText(0, myEd.getLength(), 'background', false);
           myEd.formatText(strt, slen, 'background', 'rgb(102, 185, 102)');
-        }
-      },
+          }
+        },
+
+      _descriptionChanged: function(changeRecord) {
+        var myEd = document.querySelector('quill-element');
+        if (myEd) {this.$$('#ed').setText(changeRecord);};
+        },
 
       _text_changed: function (qDelta) {
-        console.log(this.$$('#ed').getText());
-        }
+        this.set('taxon.description', this.$$('#ed').getText());
+        },
 
+      _callFlParser: function(event) {
+        this.$$('#ajax').generateRequest()
+        },
     });
   </script>
 
