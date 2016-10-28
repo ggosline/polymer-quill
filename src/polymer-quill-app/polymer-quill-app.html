@@ -9,7 +9,7 @@
       }
     </style>
 
-    <iron-ajax id=ajax"
+    <iron-ajax id="ajax"
           url="http://flparser.azurewebsites.net/characters"
           params=[[taxon]].json()
           handle-as="json"
@@ -26,7 +26,7 @@
       <paper-input value="{{taxon.genus}}"></paper-input>
       <paper-input value="{{taxon.species}}"></paper-input>
 
-      <paper-button raised onclick="_callFlParser(event)">
+      <paper-button raised on-tap="_callFlParser">
         Parse Me
       </paper-button>
 
@@ -114,6 +114,7 @@
 
       _callFlParser: function(event) {
         this.$$('#ajax').generateRequest()
+        console.log(this.ajaxResponse)
         },
     });
   </script>
