@@ -6,45 +6,76 @@
     <style>
       :host {
         display: block;
+        padding: 40px;
+      }
+      .ql-container {
+        font-size: 16px;
       }
     </style>
 
-    <iron-ajax id="ajax"
+    <style is="custom-style">
+    /*
+    Because https://blog.polymer-project.org/announcements/2015/12/01/deprecating-deep/
+    */
+    .horizontal-layout{
+       @apply(--layout-horizontal);
+       @apply(--layout-center);
+    }
+    .flexchild {
+      @apply(--layout-flex);
+    }
+    .flex2child {
+      @apply(--layout-flex-2);
+    }
+    .noflex {
+      @apply(--layout-flex-none);
+    }
+    .center-justified {
+      @apply(--layout-center-justified);
+    }
+    </style>
+
+    <iron-ajax id="ajax" method="POST"
           url="http://flparser.azurewebsites.net/characters"
-          params=[[taxon]].json()
+          body=[[taxon]]
+          content-type="application/json"
           handle-as="json"
+          on-response="_weareback"
           last-response="{{ajaxResponse}}"></iron-ajax>
 
     <h2>Hello [[prop1]]</h2>
 
-    <form is="iron-form" id="form" method="post" action="/">
+    <div class="horizontal-layout" >
 
       <paper-input label="taxonID" value="{{taxon.taxonNo}}"></paper-input>
       <paper-input label="flora" value="{{taxon.flora}}"></paper-input>
-      <paper-input value="{{taxon.rank}}"></paper-input>
-      <paper-input value="{{taxon.family}}"></paper-input>
-      <paper-input value="{{taxon.genus}}"></paper-input>
-      <paper-input value="{{taxon.species}}"></paper-input>
+      <paper-input label="rank" value="{{taxon.rank}}"></paper-input>
+      <paper-input label="family" value="{{taxon.family}}"></paper-input>
+      <paper-input label="genus" value="{{taxon.genus}}"></paper-input>
+      <paper-input label="species" value="{{taxon.species}}"></paper-input>
 
       <paper-button raised on-tap="_callFlParser">
         Parse Me
       </paper-button>
 
+    </div>
 
-    </form>
-
-    <vaadin-split-layout vertical>
+    <vaadin-split-layout horizontal>
 
       <div  style="">
         <ag-grid style="height: 400px; display: block; " id="myGrid" class="ag-fresh"></ag-grid>
       </div>
 
-    <div id="editor" on-text-change="_text_changed" style="height: 400px; display: block;  ">
-      <quill-element id="ed" theme="bubble"></quill-element>
+    <div id="editor"
+         on-text-change="_text_changed"
+         style="height: 400px; display: block; ">
+      <quill-element id="ed"></quill-element>
     </div>
 
     </vaadin-split-layout>
+
     <div>[[taxon.description]]</div>
+
   </template>
 
 </dom-module>
@@ -63,7 +94,6 @@
         },
         taxon: {
             type: Object,
-
             value: {"taxonNo": 666, "rank":"species", "flora":"FZ", "family":"x", "genus":"y", "species":"z", "description":"leaves round"}
         }
       },
@@ -87,8 +117,8 @@
         var myGrid = this.$$('#myGrid');
         myGrid.setGridOptions(gridOptions)
 
-        var myEd = this.$$('#ed');
-        myEd.format('size', 12)
+        this.scopeSubtree(this.$.editor, false);
+        var myEd = this.$.ed;
         myEd.setText(this.taxon.description);
         },
 
@@ -105,19 +135,21 @@
 
       _descriptionChanged: function(changeRecord) {
         var myEd = document.querySelector('quill-element');
-        if (myEd) {this.$$('#ed').setText(changeRecord);};
+        if (myEd) {myEd.setText(changeRecord);};
         },
 
       _text_changed: function (qDelta) {
-        this.set('taxon.description', this.$$('#ed').getText());
+        this.set('taxon.description', this.$.ed.getText());
         },
 
       _callFlParser: function(event) {
-        this.$$('#ajax').generateRequest()
-        console.log(this.ajaxResponse)
+        this.$.ajax.generateRequest();},
+
+      _weareback: function(event) {
+        this.$.myGrid.rowData = this.ajaxResponse;
         },
     });
-  </script>
+</script>
 
 
 
