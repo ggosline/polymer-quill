@@ -57,4 +57,10 @@ var rowData = [
 	}
 ];
 
+var floralist = [
+	{"name":"FWTA"},
+	{"name":"FTEA"},
+	{"name":"FZ"},
+]
+
 

@@ -11,6 +11,7 @@
       .ql-container {
         font-size: 16px;
       }
+
     </style>
 
     <style is="custom-style">
@@ -19,6 +20,10 @@
     */
     .horizontal-layout{
        @apply(--layout-horizontal);
+       @apply(--layout-center);
+    }
+    .vertical-layout{
+       @apply(--layout-vertical);
        @apply(--layout-center);
     }
     .flexchild {
@@ -48,7 +53,15 @@
     <div class="horizontal-layout" >
 
       <paper-input label="taxonID" value="{{taxon.taxonNo}}"></paper-input>
-      <paper-input label="flora" value="{{taxon.flora}}"></paper-input>
+      <template is="dom-if" if="{{floras}}">
+      <paper-dropdown-menu label="flora" value="{{taxon.flora}}">
+        <paper-listbox class="dropdown-content vertical-layout">
+          <template is="dom-repeat" items="[[floras]]">
+            <paper-item>[[item.name]]</paper-item>
+          </template>
+        </paper-listbox>
+      </paper-dropdown-menu>
+      </template>
       <paper-input label="rank" value="{{taxon.rank}}"></paper-input>
       <paper-input label="family" value="{{taxon.family}}"></paper-input>
       <paper-input label="genus" value="{{taxon.genus}}"></paper-input>
@@ -95,7 +108,10 @@
         taxon: {
             type: Object,
             value: {"taxonNo": 666, "rank":"species", "flora":"FZ", "family":"x", "genus":"y", "species":"z", "description":"leaves round"}
-        }
+        },
+        floras: {
+            type: Object,
+            value: floralist},
       },
       observers: [
         '_descriptionChanged(taxon.description)'
@@ -147,6 +163,7 @@
 
       _weareback: function(event) {
         this.$.myGrid.rowData = this.ajaxResponse;
+        this.$.myGrid.api.sizeColumnsToFit();
         },
     });
 </script>

@@ -7,7 +7,8 @@
     "ag-grid": "^5.3.1",
     "quill-element": "^0.0.3",
     "iron-form": "^1.1.4",
-    "paper-input": "^1.1.20"
+    "paper-input": "^1.1.20",
+    "paper-elements": "^1.0.7"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
