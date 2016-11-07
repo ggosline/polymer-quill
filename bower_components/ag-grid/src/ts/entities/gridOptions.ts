@@ -5,7 +5,8 @@ import {Column} from "./column";
 import {IViewportDatasource} from "../interfaces/iViewportDatasource";
 import {MenuItem} from "../widgets/menuItemComponent";
 import {ICellRendererFunc, ICellRenderer} from "../rendering/cellRenderers/iCellRenderer";
-import {IAggFunc} from "./colDef";
+import {IAggFunc, ColGroupDef, ColDef} from "./colDef";
+import {IDatasource} from "../rowControllers/iDatasource";
 
 /****************************************************************
  * Don't forget to update ComponentUtil if changing this class. *
@@ -17,12 +18,14 @@ export interface GridOptions {
      ****************************************************************/
 
     // set once in init, can never change
+    scrollbarWidth?: number;
     toolPanelSuppressRowGroups?: boolean;
     toolPanelSuppressValues?: boolean;
     toolPanelSuppressPivots?: boolean;
     toolPanelSuppressPivotMode?: boolean;
     suppressRowClickSelection?: boolean;
     suppressCellSelection?: boolean;
+    suppressRowHoverClass?: boolean;
     sortingOrder?: string[];
     suppressMultiSort?: boolean;
     suppressHorizontalScroll?: boolean;
@@ -86,6 +89,8 @@ export interface GridOptions {
     paginationOverflowSize?: number;
     paginationInitialRowCount?: number;
     paginationPageSize?: number;
+    editType?: string;
+    suppressTouch?: boolean;
 
     /****************************************************************
      * Don't forget to update ComponentUtil if changing this class. *
@@ -99,6 +104,8 @@ export interface GridOptions {
     // cellRenderers?: {[key: string]: {new(): ICellRenderer} | ICellRendererFunc};
     /* a map of strings (cellEditor keys) to cellEditors */
     // cellEditors?: {[key: string]: {new(): ICellEditor}};
+    defaultColGroupDef?: ColGroupDef;
+    defaultColDef?: ColDef;
 
     /****************************************************************
      * Don't forget to update ComponentUtil if changing this class. *
@@ -111,7 +118,7 @@ export interface GridOptions {
     groupSuppressRow?: boolean;
     groupSuppressBlankHeader?: boolean;
     forPrint?: boolean;
-    groupColumnDef?: any; // change to typed
+    groupColumnDef?: ColDef;
 
     /****************************************************************
      * Don't forget to update ComponentUtil if changing this class. *
@@ -127,7 +134,7 @@ export interface GridOptions {
     rowDeselection?: boolean;
     overlayLoadingTemplate?: string;
     overlayNoRowsTemplate?: string;
-    checkboxSelection?: Function;
+    checkboxSelection?: (params: any)=> boolean;
     rowHeight?: number;
     headerCellTemplate?: string;
 
@@ -140,8 +147,8 @@ export interface GridOptions {
     floatingTopRowData?: any[]; // should this be immutable ag2?
     floatingBottomRowData?: any[]; // should this be immutable ag2?
     showToolPanel?: boolean;
-    columnDefs?: any[]; // change to typed
-    datasource?: any; // should be typed
+    columnDefs?: (ColDef|ColGroupDef)[];
+    datasource?: IDatasource;
     viewportDatasource?: IViewportDatasource;
     // in properties
     headerHeight?: number;
@@ -152,8 +159,10 @@ export interface GridOptions {
 
     // callbacks
     groupRowRenderer?: {new(): ICellRenderer} | ICellRendererFunc | string;
+    groupRowRendererFramework?: any;
     groupRowRendererParams?: any;
     groupRowInnerRenderer?: {new(): ICellRenderer} | ICellRendererFunc | string;
+    groupRowInnerRendererFramework?: any;
     isScrollLag?(): boolean;
     isExternalFilterPresent?(): boolean;
     doesExternalFilterPass?(node: RowNode): boolean;
@@ -162,6 +171,7 @@ export interface GridOptions {
     getRowHeight?: Function;
 
     fullWidthCellRenderer?: {new(): ICellRenderer} | ICellRendererFunc | string;
+    fullWidthCellRendererFramework?: any;
     fullWidthCellRendererParams?: any;
     isFullWidthCell?(rowNode: RowNode): boolean;
 
@@ -176,6 +186,9 @@ export interface GridOptions {
     doesDataFlower?(dataItem: any): boolean;
     processRowPostCreate?(params: ProcessRowParams): void;
     processCellForClipboard?(params: ProcessCellForExportParams): any;
+    processCellFromClipboard?(params: ProcessCellForExportParams): any;
+    processSecondaryColDef?(colDef: ColDef): void;
+    processSecondaryColGroupDef?(colGroupDef: ColGroupDef): void;
 
     /****************************************************************
      * Don't forget to update ComponentUtil if changing this class. *
@@ -214,6 +227,7 @@ export interface GridOptions {
     onCellDoubleClicked?(event?: any): void;
     onCellContextMenu?(event?: any): void;
     onCellValueChanged?(event?: any): void;
+    onRowValueChanged?(event?: any): void;
     onCellFocused?(event?: any): void;
     onRowSelected?(event?: any): void;
     onSelectionChanged?(event?: any): void;

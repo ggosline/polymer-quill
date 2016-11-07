@@ -11,7 +11,7 @@ import {EventService} from "./eventService";
 import {Constants} from "./constants";
 import {ComponentUtil} from "./components/componentUtil";
 import {GridApi} from "./gridApi";
-import {ColDef, IAggFunc} from "./entities/colDef";
+import {ColDef, IAggFunc, ColGroupDef} from "./entities/colDef";
 import {Bean, Qualifier, Autowired, PostConstruct, PreDestroy} from "./context/context";
 import {ColumnController, ColumnApi} from "./columnController/columnController";
 import {Events} from "./events";
@@ -19,6 +19,8 @@ import {Utils as _} from "./utils";
 import {IViewportDatasource} from "./interfaces/iViewportDatasource";
 import {ICellRendererFunc, ICellRenderer} from "./rendering/cellRenderers/iCellRenderer";
 import {Logger, LoggerFactory} from "./logger";
+import {IFrameworkFactory} from "./interfaces/iFrameworkFactory";
+import {IDatasource} from "./rowControllers/iDatasource";
 
 var DEFAULT_ROW_HEIGHT = 25;
 var DEFAULT_VIEWPORT_ROW_MODEL_PAGE_SIZE = 5;
@@ -48,8 +50,15 @@ export class GridOptionsWrapper {
     @Autowired('columnController') private columnController: ColumnController;
     @Autowired('eventService') private eventService: EventService;
     @Autowired('enterprise') private enterprise: boolean;
+    @Autowired('frameworkFactory') private frameworkFactory: IFrameworkFactory;
 
     private propertyEventService: EventService = new EventService();
+
+    private fullWidthCellRenderer : {new(): ICellRenderer} | ICellRendererFunc | string;
+    private groupRowRenderer : {new(): ICellRenderer} | ICellRendererFunc | string;
+    private groupRowInnerRenderer : {new(): ICellRenderer} | ICellRendererFunc | string;
+
+    private domDataKey = '__AG_'+Math.random().toString;
 
     private agWire(@Qualifier('gridApi') gridApi: GridApi, @Qualifier('columnApi') columnApi: ColumnApi): void {
         this.gridOptions.api = gridApi;
@@ -70,6 +79,8 @@ export class GridOptionsWrapper {
     public init(): void {
         this.eventService.addGlobalListener(this.globalEventHandler.bind(this));
 
+        this.setupCellRenderers();
+
         if (this.isGroupSelectsChildren() && this.isSuppressParentsInRowNodes()) {
             console.warn('ag-Grid: groupSelectsChildren does not work wth suppressParentsInRowNodes, this selection method needs the part in rowNode to work');
         }
@@ -78,6 +89,22 @@ export class GridOptionsWrapper {
             console.warn('ag-Grid: rowSelectionMulti must be true for groupSelectsChildren to make sense');
         }
     }
+
+    private setupCellRenderers(): void {
+        this.fullWidthCellRenderer = this.frameworkFactory.gridOptionsFullWidthCellRenderer(this.gridOptions);
+        this.groupRowRenderer = this.frameworkFactory.gridOptionsGroupRowRenderer(this.gridOptions);
+        this.groupRowInnerRenderer = this.frameworkFactory.gridOptionsGroupRowInnerRenderer(this.gridOptions);
+    }
+
+    public getDomDataKey(): string {
+        return this.domDataKey;
+    }
+
+    // the cellRenderers come from the instances for this class, not from gridOptions, which allows
+    // the baseFrameworkFactory to replace with framework specific ones
+    public getFullWidthCellRenderer(): {new(): ICellRenderer} | ICellRendererFunc | string { return this.fullWidthCellRenderer; }
+    public getGroupRowRenderer(): {new(): ICellRenderer} | ICellRendererFunc | string { return this.groupRowRenderer; }
+    public getGroupRowInnerRenderer(): {new(): ICellRenderer} | ICellRendererFunc | string { return this.groupRowInnerRenderer; }
 
     public isEnterprise() { return this.enterprise;}
     public isRowSelection() { return this.gridOptions.rowSelection === "single" || this.gridOptions.rowSelection === "multiple"; }
@@ -91,12 +118,14 @@ export class GridOptionsWrapper {
     public isRowModelViewport() { return this.gridOptions.rowModelType === Constants.ROW_MODEL_TYPE_VIEWPORT; }
     public isRowModelDefault() { return !(this.isRowModelPagination() || this.isRowModelVirtual() || this.isRowModelViewport()); }
 
+    public isFullRowEdit() { return this.gridOptions.editType === 'fullRow'; }
     public isSuppressFocusAfterRefresh() { return isTrue(this.gridOptions.suppressFocusAfterRefresh); }
     public isShowToolPanel() { return isTrue(this.gridOptions.showToolPanel); }
     public isToolPanelSuppressRowGroups() { return isTrue(this.gridOptions.toolPanelSuppressRowGroups); }
     public isToolPanelSuppressValues() { return isTrue(this.gridOptions.toolPanelSuppressValues); }
     public isToolPanelSuppressPivots() { return isTrue(this.gridOptions.toolPanelSuppressPivots); }
     public isToolPanelSuppressPivotMode() { return isTrue(this.gridOptions.toolPanelSuppressPivotMode); }
+    public isSuppressTouch() { return isTrue(this.gridOptions.suppressTouch); }
     public isEnableCellChangeFlash() { return isTrue(this.gridOptions.enableCellChangeFlash); }
     public isGroupSelectsChildren() { return isTrue(this.gridOptions.groupSelectsChildren); }
     public isGroupIncludeFooter() { return isTrue(this.gridOptions.groupIncludeFooter); }
@@ -114,6 +143,7 @@ export class GridOptionsWrapper {
     public getFloatingTopRowData(): any[] { return this.gridOptions.floatingTopRowData; }
     public getFloatingBottomRowData(): any[] { return this.gridOptions.floatingBottomRowData; }
     public isFunctionsPassive() { return isTrue(this.gridOptions.functionsPassive); }
+    public isSuppressRowHoverClass() { return isTrue(this.gridOptions.suppressRowHoverClass); }
 
     public getQuickFilterText(): string { return this.gridOptions.quickFilterText; }
     public isUnSortIcon() { return isTrue(this.gridOptions.unSortIcon); }
@@ -123,9 +153,9 @@ export class GridOptionsWrapper {
     public getRowStyleFunc() { return this.gridOptions.getRowStyle; }
     public getRowClassFunc() { return this.gridOptions.getRowClass; }
     public getDoesDataFlowerFunc(): (data: any)=>boolean { return this.gridOptions.doesDataFlower; }
+    public getScrollbarWidth() { return this.gridOptions.scrollbarWidth; }
 
     public getIsFullWidthCellFunc(): (rowNode: RowNode)=> boolean { return this.gridOptions.isFullWidthCell; }
-    public getFullWidthCellRenderer(): {new(): ICellRenderer} | ICellRendererFunc | string { return this.gridOptions.fullWidthCellRenderer; }
     public getFullWidthCellRendererParams() { return this.gridOptions.fullWidthCellRendererParams; }
 
     public getBusinessKeyForNodeFunc() { return this.gridOptions.getBusinessKeyForNode; }
@@ -154,7 +184,7 @@ export class GridOptionsWrapper {
     public isAngularCompileHeaders() { return isTrue(this.gridOptions.angularCompileHeaders); }
     public isDebug() { return isTrue(this.gridOptions.debug); }
     public getColumnDefs() { return this.gridOptions.columnDefs; }
-    public getDatasource() { return this.gridOptions.datasource; }
+    public getDatasource(): IDatasource { return this.gridOptions.datasource; }
     public getViewportDatasource(): IViewportDatasource { return this.gridOptions.viewportDatasource; }
     public isEnableSorting() { return isTrue(this.gridOptions.enableSorting) || isTrue(this.gridOptions.enableServerSideSorting); }
     public isEnableCellExpressions() { return isTrue(this.gridOptions.enableCellExpressions); }
@@ -181,16 +211,17 @@ export class GridOptionsWrapper {
     public getIsScrollLag() { return this.gridOptions.isScrollLag; }
     public getSortingOrder(): string[] { return this.gridOptions.sortingOrder; }
     public getSlaveGrids(): GridOptions[] { return this.gridOptions.slaveGrids; }
-    public getGroupRowRenderer(): {new(): ICellRenderer} | ICellRendererFunc | string { return this.gridOptions.groupRowRenderer; }
     public getGroupRowRendererParams() { return this.gridOptions.groupRowRendererParams; }
-    public getGroupRowInnerRenderer(): {new(): ICellRenderer} | ICellRendererFunc | string { return this.gridOptions.groupRowInnerRenderer; }
     public getOverlayLoadingTemplate() { return this.gridOptions.overlayLoadingTemplate; }
     public getOverlayNoRowsTemplate() { return this.gridOptions.overlayNoRowsTemplate; }
-    public getCheckboxSelection(): Function { return this.gridOptions.checkboxSelection; }
+    public getCheckboxSelection(): (params: any)=>boolean { return this.gridOptions.checkboxSelection; }
     public isSuppressAutoSize() { return isTrue(this.gridOptions.suppressAutoSize); }
     public isSuppressParentsInRowNodes() { return isTrue(this.gridOptions.suppressParentsInRowNodes); }
     public isEnableStatusBar() { return isTrue(this.gridOptions.enableStatusBar); }
     public isFunctionsReadOnly() { return isTrue(this.gridOptions.functionsReadOnly); }
+
+    public getDefaultColDef(): ColDef { return this.gridOptions.defaultColDef; }
+    public getDefaultColGroupDef(): ColGroupDef { return this.gridOptions.defaultColGroupDef; }
 
     public getHeaderCellTemplate() { return this.gridOptions.headerCellTemplate; }
     public getHeaderCellTemplateFunc() { return this.gridOptions.getHeaderCellTemplate; }
@@ -200,7 +231,11 @@ export class GridOptionsWrapper {
     public getMainMenuItemsFunc(): GetMainMenuItems { return this.gridOptions.getMainMenuItems; }
     public getRowNodeIdFunc(): GetRowNodeIdFunc { return this.gridOptions.getRowNodeId; }
 
+    public getProcessSecondaryColDefFunc(): (colDef: ColDef)=>void { return this.gridOptions.processSecondaryColDef; }
+    public getProcessSecondaryColGroupDefFunc(): (colGroupDef: ColGroupDef)=>void { return this.gridOptions.processSecondaryColGroupDef; }
+
     public getProcessCellForClipboardFunc(): (params: ProcessCellForExportParams)=>any { return this.gridOptions.processCellForClipboard; }
+    public getProcessCellFromClipboardFunc(): (params: ProcessCellForExportParams)=>any { return this.gridOptions.processCellFromClipboard; }
     public getViewportRowModelPageSize(): number { return positiveNumberOrZero(this.gridOptions.viewportRowModelPageSize, DEFAULT_VIEWPORT_ROW_MODEL_PAGE_SIZE); }
     public getViewportRowModelBufferSize(): number { return positiveNumberOrZero(this.gridOptions.viewportRowModelBufferSize, DEFAULT_VIEWPORT_ROW_MODEL_BUFFER_SIZE); }
     // public getCellRenderers(): {[key: string]: {new(): ICellRenderer} | ICellRendererFunc} { return this.gridOptions.cellRenderers; }

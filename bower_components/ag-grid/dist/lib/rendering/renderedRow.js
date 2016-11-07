@@ -1,6 +1,6 @@
 /**
  * ag-grid - Advanced Data Grid / Data Table supporting Javascript / React / AngularJS / Web Components
- * @version v5.3.1
+ * @version v6.3.0
  * @link http://www.ag-grid.com/
  * @license MIT
  */
@@ -28,17 +28,21 @@ var cellRendererService_1 = require("./cellRendererService");
 var cellRendererFactory_1 = require("./cellRendererFactory");
 var gridPanel_1 = require("../gridPanel/gridPanel");
 var RenderedRow = (function () {
-    function RenderedRow(parentScope, rowRenderer, eBodyContainer, eFullWidthContainer, ePinnedLeftContainer, ePinnedRightContainer, node, rowIndex) {
+    function RenderedRow(parentScope, rowRenderer, eBodyContainer, eBodyContainerDF, eFullWidthContainer, ePinnedLeftContainer, ePinnedLeftContainerDF, ePinnedRightContainer, ePinnedRightContainerDF, node, rowIndex) {
         this.eAllRowContainers = [];
         this.renderedCells = {};
         this.destroyFunctions = [];
+        this.editingRow = false;
         this.initialised = false;
         this.parentScope = parentScope;
         this.rowRenderer = rowRenderer;
         this.eBodyContainer = eBodyContainer;
+        this.eBodyContainerDF = eBodyContainerDF;
         this.eFullWidthContainer = eFullWidthContainer;
         this.ePinnedLeftContainer = ePinnedLeftContainer;
+        this.ePinnedLeftContainerDF = ePinnedLeftContainerDF;
         this.ePinnedRightContainer = ePinnedRightContainer;
+        this.ePinnedRightContainerDF = ePinnedRightContainerDF;
         this.rowIndex = rowIndex;
         this.rowNode = node;
     }
@@ -56,6 +60,14 @@ var RenderedRow = (function () {
             this.setupNormalContainers();
         }
     };
+    RenderedRow.prototype.addDomData = function (eRowContainer) {
+        var domDataKey = this.gridOptionsWrapper.getDomDataKey();
+        var gridCellNoType = eRowContainer;
+        gridCellNoType[domDataKey] = {
+            renderedRow: this
+        };
+        this.destroyFunctions.push(function () { gridCellNoType[domDataKey] = null; });
+    };
     RenderedRow.prototype.setupFullWidthContainers = function () {
         this.fullWidthRow = true;
         this.fullWidthCellRenderer = this.gridOptionsWrapper.getFullWidthCellRenderer();
@@ -63,7 +75,7 @@ var RenderedRow = (function () {
         if (utils_1.Utils.missing(this.fullWidthCellRenderer)) {
             console.warn("ag-Grid: you need to provide a fullWidthCellRenderer if using isFullWidthCell()");
         }
-        this.eFullWidthRow = this.createRowContainer(this.eFullWidthContainer);
+        this.eFullWidthRow = this.createRowContainer(null, this.eFullWidthContainer);
         if (!this.gridOptionsWrapper.isForPrint()) {
             this.addMouseWheelListenerToFullWidthRow();
         }
@@ -90,14 +102,17 @@ var RenderedRow = (function () {
                 innerRenderer: this.gridOptionsWrapper.getGroupRowInnerRenderer(),
             };
         }
-        this.eFullWidthRow = this.createRowContainer(this.eFullWidthContainer);
+        this.eFullWidthRow = this.createRowContainer(null, this.eFullWidthContainer);
+        if (!this.gridOptionsWrapper.isForPrint()) {
+            this.addMouseWheelListenerToFullWidthRow();
+        }
     };
     RenderedRow.prototype.setupNormalContainers = function () {
         this.fullWidthRow = false;
-        this.eBodyRow = this.createRowContainer(this.eBodyContainer);
+        this.eBodyRow = this.createRowContainer(this.eBodyContainerDF, this.eBodyContainer);
         if (!this.gridOptionsWrapper.isForPrint()) {
-            this.ePinnedLeftRow = this.createRowContainer(this.ePinnedLeftContainer);
-            this.ePinnedRightRow = this.createRowContainer(this.ePinnedRightContainer);
+            this.ePinnedLeftRow = this.createRowContainer(this.ePinnedLeftContainerDF, this.ePinnedLeftContainer);
+            this.ePinnedRightRow = this.createRowContainer(this.ePinnedRightContainerDF, this.ePinnedRightContainer);
         }
     };
     RenderedRow.prototype.init = function () {
@@ -134,6 +149,50 @@ var RenderedRow = (function () {
         });
         this.addDataChangedListener();
         this.initialised = true;
+    };
+    RenderedRow.prototype.stopRowEditing = function (cancel) {
+        this.stopEditing(cancel);
+    };
+    RenderedRow.prototype.stopEditing = function (cancel) {
+        if (cancel === void 0) { cancel = false; }
+        this.forEachRenderedCell(function (renderedCell) {
+            renderedCell.stopEditing(cancel);
+        });
+        if (this.editingRow) {
+            this.setEditingRow(false);
+            if (!cancel) {
+                var event = {
+                    node: this.rowNode,
+                    data: this.rowNode.data,
+                    api: this.gridOptionsWrapper.getApi(),
+                    context: this.gridOptionsWrapper.getContext()
+                };
+                this.mainEventService.dispatchEvent(events_1.Events.EVENT_ROW_VALUE_CHANGED, event);
+            }
+        }
+    };
+    RenderedRow.prototype.startRowEditing = function (keyPress, charPress, sourceRenderedCell) {
+        if (keyPress === void 0) { keyPress = null; }
+        if (charPress === void 0) { charPress = null; }
+        if (sourceRenderedCell === void 0) { sourceRenderedCell = null; }
+        // don't do it if already editing
+        if (this.editingRow) {
+            return;
+        }
+        this.forEachRenderedCell(function (renderedCell) {
+            var cellStartedEdit = renderedCell === sourceRenderedCell;
+            if (cellStartedEdit) {
+                renderedCell.startEditingIfEnabled(keyPress, charPress, cellStartedEdit);
+            }
+            else {
+                renderedCell.startEditingIfEnabled(null, null, cellStartedEdit);
+            }
+        });
+        this.setEditingRow(true);
+    };
+    RenderedRow.prototype.setEditingRow = function (value) {
+        this.editingRow = value;
+        this.eAllRowContainers.forEach(function (row) { return utils_1.Utils.addOrRemoveCssClass(row, 'ag-row-editing', value); });
     };
     // because data can change, especially in virtual pagination and viewport row models, need to allow setting
     // styles and classes after the data has changed
@@ -259,6 +318,11 @@ var RenderedRow = (function () {
             this.context.wireBean(renderedCell);
             this.renderedCells[colId] = renderedCell;
             this.angular1Compile(renderedCell.getGui());
+            // if we are editing the row, then the cell needs to turn
+            // into edit mode
+            if (this.editingRow) {
+                renderedCell.startEditingIfEnabled();
+            }
             return renderedCell;
         }
     };
@@ -274,8 +338,25 @@ var RenderedRow = (function () {
             _this.rowNode.removeEventListener(rowNode_1.RowNode.EVENT_ROW_SELECTED, rowSelectedListener);
         });
     };
+    RenderedRow.prototype.onMouseEvent = function (eventName, mouseEvent) {
+        switch (eventName) {
+            case 'dblclick':
+                this.onRowDblClick(mouseEvent);
+                break;
+            case 'click':
+                this.onRowClick(mouseEvent);
+                break;
+        }
+    };
     RenderedRow.prototype.addHoverFunctionality = function () {
         var _this = this;
+        // because we are adding listeners to the row, we give the user the choice to not add
+        // the hover class, as it slows things down, especially in IE, when you add listeners
+        // to each row. we cannot do the trick of adding one listener to the GridPanel (like we
+        // do for other mouse events) as these events don't propogate
+        if (this.gridOptionsWrapper.isSuppressRowHoverClass()) {
+            return;
+        }
         var onGuiMouseEnter = this.rowNode.onMouseEnter.bind(this.rowNode);
         var onGuiMouseLeave = this.rowNode.onMouseLeave.bind(this.rowNode);
         this.eAllRowContainers.forEach(function (eRow) {
@@ -308,6 +389,9 @@ var RenderedRow = (function () {
                 _this.eAllRowContainers.forEach(function (row) { return utils_1.Utils.addOrRemoveCssClass(row, 'ag-row-no-focus', !rowFocused); });
                 rowFocusedLastTime = rowFocused;
             }
+            if (!rowFocused && _this.editingRow) {
+                _this.stopEditing(false);
+            }
         };
         this.mainEventService.addEventListener(events_1.Events.EVENT_CELL_FOCUSED, rowFocusedListener);
         this.destroyFunctions.push(function () {
@@ -337,12 +421,6 @@ var RenderedRow = (function () {
         this.destroyFunctions.push(function () {
             _this.rowNode.removeEventListener(rowNode_1.RowNode.EVENT_DATA_CHANGED, nodeDataChangedListener);
         });
-    };
-    RenderedRow.prototype.onMouseEvent = function (eventName, mouseEvent, cell) {
-        var renderedCell = this.renderedCells[cell.column.getId()];
-        if (renderedCell) {
-            renderedCell.onMouseEvent(eventName, mouseEvent);
-        }
     };
     RenderedRow.prototype.setTopAndHeightCss = function () {
         // if showing scrolls, position on the container
@@ -422,8 +500,10 @@ var RenderedRow = (function () {
         this.angular1Compile(this.eFullWidthRow);
     };
     RenderedRow.prototype.destroyFullWidthComponent = function () {
-        if (this.fullWidthRowComponent && this.fullWidthRowComponent.destroy) {
-            this.fullWidthRowComponent.destroy();
+        if (this.fullWidthRowComponent) {
+            if (this.fullWidthRowComponent.destroy) {
+                this.fullWidthRowComponent.destroy();
+            }
             this.fullWidthRowComponent = null;
         }
         utils_1.Utils.removeAllChildren(this.eFullWidthRow);
@@ -523,17 +603,13 @@ var RenderedRow = (function () {
         agEvent.eventSource = eventSource;
         return agEvent;
     };
-    RenderedRow.prototype.createRowContainer = function (eParent) {
+    RenderedRow.prototype.createRowContainer = function (eParentDF, eParent) {
         var eRow = document.createElement('div');
-        var rowClickListener = this.onRowClick.bind(this);
-        var rowDblClickListener = this.onRowDblClick.bind(this);
-        eRow.addEventListener("click", rowClickListener);
-        eRow.addEventListener("dblclick", rowDblClickListener);
-        eParent.appendChild(eRow);
+        this.addDomData(eRow);
+        var eTarget = eParentDF ? eParentDF : eParent;
+        eTarget.appendChild(eRow);
         this.eAllRowContainers.push(eRow);
         this.destroyFunctions.push(function () {
-            eRow.removeEventListener("click", rowClickListener);
-            eRow.removeEventListener("dblclick", rowDblClickListener);
             eParent.removeChild(eRow);
         });
         return eRow;

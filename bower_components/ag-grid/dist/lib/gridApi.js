@@ -1,6 +1,6 @@
 /**
  * ag-grid - Advanced Data Grid / Data Table supporting Javascript / React / AngularJS / Web Components
- * @version v5.3.1
+ * @version v6.3.0
  * @link http://www.ag-grid.com/
  * @license MIT
  */
@@ -31,6 +31,7 @@ var gridCore_1 = require("./gridCore");
 var sortController_1 = require("./sortController");
 var paginationController_1 = require("./rowControllers/paginationController");
 var focusedCellController_1 = require("./focusedCellController");
+var gridCell_1 = require("./entities/gridCell");
 var utils_1 = require("./utils");
 var cellRendererFactory_1 = require("./rendering/cellRendererFactory");
 var cellEditorFactory_1 = require("./rendering/cellEditorFactory");
@@ -100,6 +101,18 @@ var GridApi = (function () {
     };
     GridApi.prototype.setFloatingBottomRowData = function (rows) {
         this.floatingRowModel.setFloatingBottomRowData(rows);
+    };
+    GridApi.prototype.getFloatingTopRowCount = function () {
+        return this.floatingRowModel.getFloatingTopRowCount();
+    };
+    GridApi.prototype.getFloatingBottomRowCount = function () {
+        return this.floatingRowModel.getFloatingBottomRowCount();
+    };
+    GridApi.prototype.getFloatingTopRow = function (index) {
+        return this.floatingRowModel.getFloatingTopRow(index);
+    };
+    GridApi.prototype.getFloatingBottomRow = function (index) {
+        return this.floatingRowModel.getFloatingBottomRow(index);
     };
     GridApi.prototype.setColumnDefs = function (colDefs) {
         this.columnController.setColumnDefs(colDefs);
@@ -302,13 +315,17 @@ var GridApi = (function () {
     };
     GridApi.prototype.getFilterApiForColDef = function (colDef) {
         console.warn('ag-grid API method getFilterApiForColDef deprecated, use getFilterApi instead');
-        return this.getFilterApi(colDef);
+        return this.getFilterInstance(colDef);
     };
-    GridApi.prototype.getFilterApi = function (key) {
+    GridApi.prototype.getFilterInstance = function (key) {
         var column = this.columnController.getPrimaryColumn(key);
         if (column) {
-            return this.filterManager.getFilterApi(column);
+            return this.filterManager.getFilterComponent(column);
         }
+    };
+    GridApi.prototype.getFilterApi = function (key) {
+        console.warn('ag-Grid: getFilterApi is deprecated, use getFilterInstance instead');
+        return this.getFilterInstance(key);
     };
     GridApi.prototype.destroyFilter = function (key) {
         var column = this.columnController.getPrimaryColumn(key);
@@ -404,11 +421,12 @@ var GridApi = (function () {
         }
         this.rangeController.clearSelection();
     };
-    GridApi.prototype.copySelectedRowsToClipboard = function (includeHeader) {
+    GridApi.prototype.copySelectedRowsToClipboard = function (includeHeader, columnKeys) {
         if (!this.clipboardService) {
             console.warn('ag-Grid: clipboard is only available in ag-Grid Enterprise');
         }
-        this.clipboardService.copySelectedRowsToClipboard(includeHeader);
+        var column = null;
+        this.clipboardService.copySelectedRowsToClipboard(includeHeader, columnKeys);
     };
     GridApi.prototype.copySelectedRangeToClipboard = function (includeHeader) {
         if (!this.clipboardService) {
@@ -433,6 +451,11 @@ var GridApi = (function () {
     GridApi.prototype.stopEditing = function (cancel) {
         if (cancel === void 0) { cancel = false; }
         this.rowRenderer.stopEditing(cancel);
+    };
+    GridApi.prototype.startEditingCell = function (params) {
+        var column = this.columnController.getGridColumn(params.colKey);
+        var gridCell = new gridCell_1.GridCell(params.rowIndex, null, column);
+        this.rowRenderer.startEditingCell(gridCell, params.keyPress, params.charPress);
     };
     GridApi.prototype.addAggFunc = function (key, aggFunc) {
         if (this.aggFuncService) {
@@ -505,6 +528,9 @@ var GridApi = (function () {
         else {
             console.warn("ag-Grid: api.getVirtualPageState is only available when rowModelType='virtual'.");
         }
+    };
+    GridApi.prototype.checkGridSize = function () {
+        this.gridPanel.sizeHeaderAndBody();
     };
     __decorate([
         context_1.Autowired('csvCreator'), 

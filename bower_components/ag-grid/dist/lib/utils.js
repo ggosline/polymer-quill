@@ -1,6 +1,6 @@
 /**
  * ag-grid - Advanced Data Grid / Data Table supporting Javascript / React / AngularJS / Web Components
- * @version v5.3.1
+ * @version v6.3.0
  * @link http://www.ag-grid.com/
  * @license MIT
  */
@@ -22,6 +22,17 @@ exports.Timer = Timer;
 var Utils = (function () {
     function Utils() {
     }
+    // returns true if the event is close to the original event by X pixels either vertically or horizontally.
+    // we only start dragging after X pixels so this allows us to know if we should start dragging yet.
+    Utils.areEventsNear = function (e1, e2, pixelCount) {
+        // by default, we wait 4 pixels before starting the drag
+        if (pixelCount === 0) {
+            return false;
+        }
+        var diffX = Math.abs(e1.clientX - e2.clientX);
+        var diffY = Math.abs(e1.clientY - e2.clientY);
+        return Math.max(diffX, diffY) <= pixelCount;
+    };
     Utils.getNameOfClass = function (TheClass) {
         var funcNameRegex = /function (.{1,})\(/;
         var funcAsString = TheClass.toString();
@@ -34,6 +45,27 @@ var Utils = (function () {
             result.push(value);
         });
         return result;
+    };
+    Utils.getValueUsingField = function (data, field, fieldContainsDots) {
+        if (!field || !data) {
+            return;
+        }
+        // if no '.', then it's not a deep value
+        if (!fieldContainsDots) {
+            return data[field];
+        }
+        else {
+            // otherwise it is a deep value, so need to dig for it
+            var fields = field.split('.');
+            var currentObject = data;
+            for (var i = 0; i < fields.length; i++) {
+                currentObject = currentObject[fields[i]];
+                if (this.missing(currentObject)) {
+                    return null;
+                }
+            }
+            return currentObject;
+        }
     };
     Utils.iterateObject = function (object, callback) {
         if (this.missing(object)) {
@@ -427,11 +459,11 @@ var Utils = (function () {
         eResult.appendChild(this.createIconNoSpan(iconName, gridOptionsWrapper, column, svgFactoryFunc));
         return eResult;
     };
-    Utils.createIconNoSpan = function (iconName, gridOptionsWrapper, colDefWrapper, svgFactoryFunc) {
+    Utils.createIconNoSpan = function (iconName, gridOptionsWrapper, column, svgFactoryFunc) {
         var userProvidedIcon;
         // check col for icon first
-        if (colDefWrapper && colDefWrapper.getColDef().icons) {
-            userProvidedIcon = colDefWrapper.getColDef().icons[iconName];
+        if (column && column.getColDef().icons) {
+            userProvidedIcon = column.getColDef().icons[iconName];
         }
         // it not in col, try grid options
         if (!userProvidedIcon && gridOptionsWrapper.getIcons()) {

@@ -1,14 +1,15 @@
-// Type definitions for ag-grid v5.3.1
+// Type definitions for ag-grid v6.3.0
 // Project: http://www.ag-grid.com/
 // Definitions by: Niall Crosby <https://github.com/ceolter/>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 import { RowNode } from "./entities/rowNode";
 import { GridOptions, NodeChildDetails, GetContextMenuItems, GetMainMenuItems, ProcessRowParams, ProcessCellForExportParams, GetRowNodeIdFunc } from "./entities/gridOptions";
 import { GridApi } from "./gridApi";
-import { ColDef, IAggFunc } from "./entities/colDef";
+import { ColDef, IAggFunc, ColGroupDef } from "./entities/colDef";
 import { ColumnApi } from "./columnController/columnController";
 import { IViewportDatasource } from "./interfaces/iViewportDatasource";
 import { ICellRendererFunc, ICellRenderer } from "./rendering/cellRenderers/iCellRenderer";
+import { IDatasource } from "./rowControllers/iDatasource";
 export declare class GridOptionsWrapper {
     private static MIN_COL_WIDTH;
     static PROP_HEADER_HEIGHT: string;
@@ -16,10 +17,26 @@ export declare class GridOptionsWrapper {
     private columnController;
     private eventService;
     private enterprise;
+    private frameworkFactory;
     private propertyEventService;
+    private fullWidthCellRenderer;
+    private groupRowRenderer;
+    private groupRowInnerRenderer;
+    private domDataKey;
     private agWire(gridApi, columnApi);
     private destroy();
     init(): void;
+    private setupCellRenderers();
+    getDomDataKey(): string;
+    getFullWidthCellRenderer(): {
+        new (): ICellRenderer;
+    } | ICellRendererFunc | string;
+    getGroupRowRenderer(): {
+        new (): ICellRenderer;
+    } | ICellRendererFunc | string;
+    getGroupRowInnerRenderer(): {
+        new (): ICellRenderer;
+    } | ICellRendererFunc | string;
     isEnterprise(): boolean;
     isRowSelection(): boolean;
     isRowDeselection(): boolean;
@@ -30,12 +47,14 @@ export declare class GridOptionsWrapper {
     isRowModelVirtual(): boolean;
     isRowModelViewport(): boolean;
     isRowModelDefault(): boolean;
+    isFullRowEdit(): boolean;
     isSuppressFocusAfterRefresh(): boolean;
     isShowToolPanel(): boolean;
     isToolPanelSuppressRowGroups(): boolean;
     isToolPanelSuppressValues(): boolean;
     isToolPanelSuppressPivots(): boolean;
     isToolPanelSuppressPivotMode(): boolean;
+    isSuppressTouch(): boolean;
     isEnableCellChangeFlash(): boolean;
     isGroupSelectsChildren(): boolean;
     isGroupIncludeFooter(): boolean;
@@ -53,6 +72,7 @@ export declare class GridOptionsWrapper {
     getFloatingTopRowData(): any[];
     getFloatingBottomRowData(): any[];
     isFunctionsPassive(): boolean;
+    isSuppressRowHoverClass(): boolean;
     getQuickFilterText(): string;
     isUnSortIcon(): boolean;
     isSuppressMenuHide(): boolean;
@@ -61,10 +81,8 @@ export declare class GridOptionsWrapper {
     getRowStyleFunc(): Function;
     getRowClassFunc(): Function;
     getDoesDataFlowerFunc(): (data: any) => boolean;
+    getScrollbarWidth(): number;
     getIsFullWidthCellFunc(): (rowNode: RowNode) => boolean;
-    getFullWidthCellRenderer(): {
-        new (): ICellRenderer;
-    } | ICellRendererFunc | string;
     getFullWidthCellRendererParams(): any;
     getBusinessKeyForNodeFunc(): (node: RowNode) => string;
     getHeaderCellRenderer(): any;
@@ -89,8 +107,8 @@ export declare class GridOptionsWrapper {
     isAngularCompileFilters(): boolean;
     isAngularCompileHeaders(): boolean;
     isDebug(): boolean;
-    getColumnDefs(): any[];
-    getDatasource(): any;
+    getColumnDefs(): (ColDef | ColGroupDef)[];
+    getDatasource(): IDatasource;
     getViewportDatasource(): IViewportDatasource;
     isEnableSorting(): boolean;
     isEnableCellExpressions(): boolean;
@@ -119,20 +137,16 @@ export declare class GridOptionsWrapper {
     getIsScrollLag(): () => boolean;
     getSortingOrder(): string[];
     getSlaveGrids(): GridOptions[];
-    getGroupRowRenderer(): {
-        new (): ICellRenderer;
-    } | ICellRendererFunc | string;
     getGroupRowRendererParams(): any;
-    getGroupRowInnerRenderer(): {
-        new (): ICellRenderer;
-    } | ICellRendererFunc | string;
     getOverlayLoadingTemplate(): string;
     getOverlayNoRowsTemplate(): string;
-    getCheckboxSelection(): Function;
+    getCheckboxSelection(): (params: any) => boolean;
     isSuppressAutoSize(): boolean;
     isSuppressParentsInRowNodes(): boolean;
     isEnableStatusBar(): boolean;
     isFunctionsReadOnly(): boolean;
+    getDefaultColDef(): ColDef;
+    getDefaultColGroupDef(): ColGroupDef;
     getHeaderCellTemplate(): string;
     getHeaderCellTemplateFunc(): (params: any) => string | HTMLElement;
     getNodeChildDetailsFunc(): ((dataItem: any) => NodeChildDetails);
@@ -140,7 +154,10 @@ export declare class GridOptionsWrapper {
     getContextMenuItemsFunc(): GetContextMenuItems;
     getMainMenuItemsFunc(): GetMainMenuItems;
     getRowNodeIdFunc(): GetRowNodeIdFunc;
+    getProcessSecondaryColDefFunc(): (colDef: ColDef) => void;
+    getProcessSecondaryColGroupDefFunc(): (colGroupDef: ColGroupDef) => void;
     getProcessCellForClipboardFunc(): (params: ProcessCellForExportParams) => any;
+    getProcessCellFromClipboardFunc(): (params: ProcessCellForExportParams) => any;
     getViewportRowModelPageSize(): number;
     getViewportRowModelBufferSize(): number;
     setProperty(key: string, value: any): void;

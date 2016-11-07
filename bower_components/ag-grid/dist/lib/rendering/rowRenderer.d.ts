@@ -1,4 +1,4 @@
-// Type definitions for ag-grid v5.3.1
+// Type definitions for ag-grid v6.3.0
 // Project: http://www.ag-grid.com/
 // Definitions by: Niall Crosby <https://github.com/ceolter/>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
@@ -36,9 +36,12 @@ export declare class RowRenderer {
     private eAllPinnedRightContainers;
     private eFullWidthContainer;
     private eBodyContainer;
+    private eBodyContainerDF;
     private eBodyViewport;
     private ePinnedLeftColsContainer;
+    private ePinnedLeftColsContainerDF;
     private ePinnedRightColsContainer;
+    private ePinnedRightColsContainerDF;
     private eFloatingTopContainer;
     private eFloatingTopPinnedLeftContainer;
     private eFloatingTopPinnedRightContainer;
@@ -50,6 +53,7 @@ export declare class RowRenderer {
     private logger;
     private destroyFunctions;
     agWire(loggerFactory: LoggerFactory): void;
+    private setupDocumentFragments();
     init(): void;
     onColumnEvent(event: ColumnChangeEvent): void;
     getContainersFromGridPanel(): void;
@@ -78,10 +82,13 @@ export declare class RowRenderer {
     getFirstVirtualRenderedRow(): number;
     getLastVirtualRenderedRow(): number;
     private ensureRowsRendered();
-    onMouseEvent(eventName: string, mouseEvent: MouseEvent, cell: GridCell): void;
     private insertRow(node, rowIndex);
     getRenderedNodes(): any[];
     navigateToNextCell(key: any, rowIndex: number, column: Column, floating: string): void;
+    startEditingCell(gridCell: GridCell, keyPress: number, charPress: string): void;
     private getComponentForCell(gridCell);
-    moveFocusToNextCell(rowIndex: any, column: any, floating: string, shiftKey: boolean, startEditing: boolean): boolean;
+    onTabKeyDown(previousRenderedCell: RenderedCell, keyboardEvent: KeyboardEvent): void;
+    private moveEditToNextCell(previousRenderedCell, nextRenderedCell);
+    private moveEditToNextRow(previousRenderedCell, nextRenderedCell);
+    private moveFocusToNextCell(gridCell, shiftKey, startEditing);
 }

@@ -105,7 +105,12 @@ export class GroupCellRenderer extends Component implements ICellRenderer {
     }
 
     private createFromInnerRenderer(params: any): void {
-        this.cellRendererService.useCellRenderer(params.innerRenderer, this.eValue, params);
+        let innerComponent = this.cellRendererService.useCellRenderer(params.innerRenderer, this.eValue, params);
+        this.addDestroyFunc( ()=> {
+            if (innerComponent && innerComponent.destroy) {
+                innerComponent.destroy();
+            }
+        });
     }
 
     private createFooterCell(params: any): void {
@@ -194,8 +199,16 @@ export class GroupCellRenderer extends Component implements ICellRenderer {
         }
     }
 
+    private isUserWantsSelected(params: any): boolean {
+        if (typeof params.checkbox === 'function') {
+            return params.checkbox(params);
+        } else {
+            return params.checkbox === true;
+        }
+    }
+
     private addCheckboxIfNeeded(params: any): void {
-        var checkboxNeeded = params.checkbox
+        var checkboxNeeded = this.isUserWantsSelected(params)
                 // footers cannot be selected
                 && !this.rowNode.footer
                 // floating rows cannot be selected

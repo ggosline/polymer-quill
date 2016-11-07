@@ -1,6 +1,6 @@
 /**
  * ag-grid - Advanced Data Grid / Data Table supporting Javascript / React / AngularJS / Web Components
- * @version v5.3.1
+ * @version v6.3.0
  * @link http://www.ag-grid.com/
  * @license MIT
  */
@@ -82,7 +82,7 @@ var SelectionController = (function () {
         }
         var inMemoryRowModel = this.rowModel;
         inMemoryRowModel.getTopLevelNodes().forEach(function (rowNode) {
-            rowNode.deptFirstSearch(function (rowNode) {
+            rowNode.depthFirstSearch(function (rowNode) {
                 if (rowNode.group) {
                     rowNode.calculateSelectedFromChildren();
                 }
@@ -124,6 +124,9 @@ var SelectionController = (function () {
         if (this.selectedNodes[rowNode.id] !== undefined) {
             rowNode.setSelectedInitialValue(true);
             this.selectedNodes[rowNode.id] = rowNode;
+        }
+        else {
+            rowNode.setSelectedInitialValue(false);
         }
     };
     SelectionController.prototype.reset = function () {

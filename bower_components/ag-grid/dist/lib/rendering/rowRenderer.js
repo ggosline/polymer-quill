@@ -1,6 +1,6 @@
 /**
  * ag-grid - Advanced Data Grid / Data Table supporting Javascript / React / AngularJS / Web Components
- * @version v5.3.1
+ * @version v6.3.0
  * @link http://www.ag-grid.com/
  * @license MIT
  */
@@ -47,9 +47,20 @@ var RowRenderer = (function () {
         this.logger = this.loggerFactory.create('RowRenderer');
         this.logger = loggerFactory.create('BalancedColumnTreeBuilder');
     };
+    RowRenderer.prototype.setupDocumentFragments = function () {
+        var usingDocumentFragments = !!document.createDocumentFragment;
+        if (usingDocumentFragments) {
+            this.eBodyContainerDF = document.createDocumentFragment();
+            if (!this.gridOptionsWrapper.isForPrint()) {
+                this.ePinnedLeftColsContainerDF = document.createDocumentFragment();
+                this.ePinnedRightColsContainerDF = document.createDocumentFragment();
+            }
+        }
+    };
     RowRenderer.prototype.init = function () {
         var _this = this;
         this.getContainersFromGridPanel();
+        this.setupDocumentFragments();
         var columnListener = this.onColumnEvent.bind(this);
         var refreshViewListener = this.refreshView.bind(this);
         this.eventService.addEventListener(events_1.Events.EVENT_DISPLAYED_COLUMNS_CHANGED, columnListener);
@@ -99,7 +110,7 @@ var RowRenderer = (function () {
         var eCells = [];
         utils_1.Utils.iterateObject(this.renderedRows, callback);
         utils_1.Utils.iterateObject(this.renderedBottomFloatingRows, callback);
-        utils_1.Utils.iterateObject(this.renderedBottomFloatingRows, callback);
+        utils_1.Utils.iterateObject(this.renderedTopFloatingRows, callback);
         function callback(key, renderedRow) {
             var eCell = renderedRow.getCellForCol(column);
             if (eCell) {
@@ -134,7 +145,7 @@ var RowRenderer = (function () {
         }
         if (rowNodes) {
             rowNodes.forEach(function (node, rowIndex) {
-                var renderedRow = new renderedRow_1.RenderedRow(_this.$scope, _this, eBodyContainer, eFullWidthContainer, ePinnedLeftContainer, ePinnedRightContainer, node, rowIndex);
+                var renderedRow = new renderedRow_1.RenderedRow(_this.$scope, _this, eBodyContainer, null, eFullWidthContainer, ePinnedLeftContainer, null, ePinnedRightContainer, null, node, rowIndex);
                 _this.context.wireBean(renderedRow);
                 renderedRows.push(renderedRow);
             });
@@ -175,8 +186,8 @@ var RowRenderer = (function () {
     };
     RowRenderer.prototype.stopEditing = function (cancel) {
         if (cancel === void 0) { cancel = false; }
-        this.forEachRenderedCell(function (renderedCell) {
-            renderedCell.stopEditing(cancel);
+        this.forEachRenderedRow(function (key, renderedRow) {
+            renderedRow.stopEditing(cancel);
         });
     };
     RowRenderer.prototype.forEachRenderedCell = function (callback) {
@@ -343,7 +354,7 @@ var RowRenderer = (function () {
         return this.lastRenderedRow;
     };
     RowRenderer.prototype.ensureRowsRendered = function () {
-        //var start = new Date().getTime();
+        // var timer = new Timer();
         var _this = this;
         // at the end, this array will contain the items we need to remove
         var rowsToRemove = Object.keys(this.renderedRows);
@@ -360,32 +371,23 @@ var RowRenderer = (function () {
                 this.insertRow(node, rowIndex);
             }
         }
+        // timer.print('creating template');
         // at this point, everything in our 'rowsToRemove' . . .
         this.removeVirtualRow(rowsToRemove);
+        // timer.print('removing');
+        if (this.eBodyContainerDF) {
+            this.eBodyContainer.appendChild(this.eBodyContainerDF);
+            if (!this.gridOptionsWrapper.isForPrint()) {
+                this.ePinnedLeftColsContainer.appendChild(this.ePinnedLeftColsContainerDF);
+                this.ePinnedRightColsContainer.appendChild(this.ePinnedRightColsContainerDF);
+            }
+        }
         // if we are doing angular compiling, then do digest the scope here
         if (this.gridOptionsWrapper.isAngularCompileRows()) {
             // we do it in a timeout, in case we are already in an apply
             setTimeout(function () { _this.$scope.$apply(); }, 0);
         }
-        //var end = new Date().getTime();
-        //console.log(end-start);
-    };
-    RowRenderer.prototype.onMouseEvent = function (eventName, mouseEvent, cell) {
-        var renderedRow;
-        switch (cell.floating) {
-            case constants_1.Constants.FLOATING_TOP:
-                renderedRow = this.renderedTopFloatingRows[cell.rowIndex];
-                break;
-            case constants_1.Constants.FLOATING_BOTTOM:
-                renderedRow = this.renderedBottomFloatingRows[cell.rowIndex];
-                break;
-            default:
-                renderedRow = this.renderedRows[cell.rowIndex];
-                break;
-        }
-        if (renderedRow) {
-            renderedRow.onMouseEvent(eventName, mouseEvent, cell);
-        }
+        // timer.print('total');
     };
     RowRenderer.prototype.insertRow = function (node, rowIndex) {
         var columns = this.columnController.getAllDisplayedColumns();
@@ -393,7 +395,7 @@ var RowRenderer = (function () {
         if (utils_1.Utils.missingOrEmpty(columns)) {
             return;
         }
-        var renderedRow = new renderedRow_1.RenderedRow(this.$scope, this, this.eBodyContainer, this.eFullWidthContainer, this.ePinnedLeftColsContainer, this.ePinnedRightColsContainer, node, rowIndex);
+        var renderedRow = new renderedRow_1.RenderedRow(this.$scope, this, this.eBodyContainer, this.eBodyContainerDF, this.eFullWidthContainer, this.ePinnedLeftColsContainer, this.ePinnedLeftColsContainerDF, this.ePinnedRightColsContainer, this.ePinnedRightColsContainerDF, node, rowIndex);
         this.context.wireBean(renderedRow);
         this.renderedRows[rowIndex] = renderedRow;
     };
@@ -443,6 +445,10 @@ var RowRenderer = (function () {
             this.rangeController.setRangeToCell(new gridCell_1.GridCell(nextCell.rowIndex, nextCell.floating, nextCell.column));
         }
     };
+    RowRenderer.prototype.startEditingCell = function (gridCell, keyPress, charPress) {
+        var cell = this.getComponentForCell(gridCell);
+        cell.startRowOrCellEdit(keyPress, charPress);
+    };
     RowRenderer.prototype.getComponentForCell = function (gridCell) {
         var rowComponent;
         switch (gridCell.floating) {
@@ -462,16 +468,64 @@ var RowRenderer = (function () {
         var cellComponent = rowComponent.getRenderedCellForColumn(gridCell.column);
         return cellComponent;
     };
+    RowRenderer.prototype.onTabKeyDown = function (previousRenderedCell, keyboardEvent) {
+        var editing = previousRenderedCell.isEditing();
+        var gridCell = previousRenderedCell.getGridCell();
+        // find the next cell to start editing
+        var nextRenderedCell = this.moveFocusToNextCell(gridCell, keyboardEvent.shiftKey, editing);
+        var foundCell = utils_1.Utils.exists(nextRenderedCell);
+        // only prevent default if we found a cell. so if user is on last cell and hits tab, then we default
+        // to the normal tabbing so user can exit the grid.
+        if (foundCell) {
+            if (editing) {
+                if (this.gridOptionsWrapper.isFullRowEdit()) {
+                    this.moveEditToNextRow(previousRenderedCell, nextRenderedCell);
+                }
+                else {
+                    this.moveEditToNextCell(previousRenderedCell, nextRenderedCell);
+                }
+            }
+            else {
+                nextRenderedCell.focusCell(true);
+            }
+            keyboardEvent.preventDefault();
+        }
+    };
+    RowRenderer.prototype.moveEditToNextCell = function (previousRenderedCell, nextRenderedCell) {
+        previousRenderedCell.stopEditing();
+        nextRenderedCell.startEditingIfEnabled(null, null, true);
+        nextRenderedCell.focusCell(false);
+    };
+    RowRenderer.prototype.moveEditToNextRow = function (previousRenderedCell, nextRenderedCell) {
+        var pGridCell = previousRenderedCell.getGridCell();
+        var nGridCell = nextRenderedCell.getGridCell();
+        var rowsMatch = (pGridCell.rowIndex === nGridCell.rowIndex)
+            && (pGridCell.floating === nGridCell.floating);
+        if (rowsMatch) {
+            // same row, so we don't start / stop editing, we just move the focus along
+            previousRenderedCell.setFocusOutOnEditor();
+            nextRenderedCell.setFocusInOnEditor();
+        }
+        else {
+            var pRow = previousRenderedCell.getRenderedRow();
+            var nRow = nextRenderedCell.getRenderedRow();
+            previousRenderedCell.setFocusOutOnEditor();
+            pRow.stopEditing();
+            nRow.startRowEditing();
+            nextRenderedCell.setFocusInOnEditor();
+        }
+        nextRenderedCell.focusCell();
+    };
     // called by the cell, when tab is pressed while editing.
-    // @return: true when navigation successful, otherwise false
-    RowRenderer.prototype.moveFocusToNextCell = function (rowIndex, column, floating, shiftKey, startEditing) {
-        var nextCell = new gridCell_1.GridCell(rowIndex, floating, column);
+    // @return: RenderedCell when navigation successful, otherwise null
+    RowRenderer.prototype.moveFocusToNextCell = function (gridCell, shiftKey, startEditing) {
+        var nextCell = gridCell;
         while (true) {
             nextCell = this.cellNavigationService.getNextTabbedCell(nextCell, shiftKey);
             // if no 'next cell', means we have got to last cell of grid, so nothing to move to,
             // so bottom right cell going forwards, or top left going backwards
             if (!nextCell) {
-                return false;
+                return null;
             }
             // this scrolls the row into view
             var cellIsNotFloating = utils_1.Utils.missing(nextCell.floating);
@@ -489,12 +543,8 @@ var RowRenderer = (function () {
             if (startEditing && !nextRenderedCell.isCellEditable()) {
                 continue;
             }
-            if (startEditing) {
-                nextRenderedCell.startEditingIfEnabled();
-                nextRenderedCell.focusCell(false);
-            }
-            else {
-                nextRenderedCell.focusCell(true);
+            if (nextRenderedCell.isSuppressNavigable()) {
+                continue;
             }
             // by default, when we click a cell, it gets selected into a range, so to keep keyboard navigation
             // consistent, we set into range here also.
@@ -502,7 +552,7 @@ var RowRenderer = (function () {
                 this.rangeController.setRangeToCell(new gridCell_1.GridCell(nextCell.rowIndex, nextCell.floating, nextCell.column));
             }
             // we successfully tabbed onto a grid cell, so return true
-            return true;
+            return nextRenderedCell;
         }
     };
     __decorate([

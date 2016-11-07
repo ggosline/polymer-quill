@@ -27,7 +27,7 @@ import {
     Qualifier,
     PreDestroy
 } from "./context/context";
-import {DragAndDropService} from "./dragAndDrop/dragAndDropService";
+import {DragAndDropService, DragSourceType} from "./dragAndDrop/dragAndDropService";
 import {DragService} from "./dragAndDrop/dragService";
 import {FilterManager} from "./filter/filterManager";
 import {NumberFilter} from "./filter/numberFilter";
@@ -101,6 +101,9 @@ import {AnimateShowChangeCellRenderer} from "./rendering/cellRenderers/animateSh
 import {InMemoryNodeManager} from "./rowControllers/inMemory/inMemoryNodeManager";
 import {VirtualPageCache} from "./rowControllers/virtualPagination/virtualPageCache";
 import {VirtualPage} from "./rowControllers/virtualPagination/virtualPage";
+import {BaseFrameworkFactory} from "./baseFrameworkFactory";
+import {MethodNotImplementedException} from "./misc/methodNotImplementedException";
+import {TouchListener} from "./widgets/touchListener";
 
 export function populateClientExports(exports: any): void {
 
@@ -131,6 +134,7 @@ export function populateClientExports(exports: any): void {
     // dragAndDrop
     exports.DragAndDropService = DragAndDropService;
     exports.DragService = DragService;
+    exports.DragSourceType = DragSourceType;
 
     // entities
     exports.Column = Column;
@@ -170,6 +174,7 @@ export function populateClientExports(exports: any): void {
 
     // misc
     exports.FocusService = FocusService;
+    exports.MethodNotImplementedException = MethodNotImplementedException;
 
     // rendering / cellEditors
     exports.LargeTextCellEditor = LargeTextCellEditor;
@@ -221,8 +226,10 @@ export function populateClientExports(exports: any): void {
     exports.MenuList = MenuList;
     exports.Listener = Listener;
     exports.QuerySelector = QuerySelector;
+    exports.TouchListener = TouchListener;
 
     // root
+    exports.BaseFrameworkFactory = BaseFrameworkFactory;
     exports.CellNavigationService = CellNavigationService;
     exports.ColumnChangeEvent = ColumnChangeEvent;
     exports.Constants = Constants;
