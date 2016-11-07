@@ -24,7 +24,7 @@
     }
     .vertical-layout{
        @apply(--layout-vertical);
-       @apply(--layout-center);
+       @apply(--layout-left);
     }
     .center-justified {
       @apply(--layout-center-justified);
@@ -48,7 +48,7 @@
       <paper-dropdown-menu-light label="flora" value="{{taxon.flora_name}}">
         <paper-listbox class="dropdown-content vertical-layout">
           <template is="dom-repeat" items="[[floras]]">
-            <paper-item>[[item.name]]</paper-item>
+            <paper-item >[[item.name]]</paper-item>
           </template>
         </paper-listbox>
       </paper-dropdown-menu-light>
@@ -79,7 +79,7 @@
     <div id="editor"
          on-text-change="_text_changed"
          style="height: 400px; display: block; ">
-      <quill-element id="ed"></quill-element>
+      <quill-element id="ed" theme="bubble"></quill-element>
     </div>
 
     </vaadin-split-layout>
