@@ -26,15 +26,6 @@
        @apply(--layout-vertical);
        @apply(--layout-center);
     }
-    .flexchild {
-      @apply(--layout-flex);
-    }
-    .flex2child {
-      @apply(--layout-flex-2);
-    }
-    .noflex {
-      @apply(--layout-flex-none);
-    }
     .center-justified {
       @apply(--layout-center-justified);
     }
@@ -54,15 +45,21 @@
 
       <paper-input label="taxonID" value="{{taxon.taxonNo}}"></paper-input>
       <template is="dom-if" if="{{floras}}">
-      <paper-dropdown-menu label="flora" value="{{taxon.flora}}">
+      <paper-dropdown-menu-light label="flora" value="{{taxon.flora_name}}">
         <paper-listbox class="dropdown-content vertical-layout">
           <template is="dom-repeat" items="[[floras]]">
             <paper-item>[[item.name]]</paper-item>
           </template>
         </paper-listbox>
-      </paper-dropdown-menu>
+      </paper-dropdown-menu-light>
       </template>
-      <paper-input label="rank" value="{{taxon.rank}}"></paper-input>
+      <paper-dropdown-menu-light  label="rank" value="{{taxon.rank}}" >
+        <paper-listbox class="dropdown-content vertical-layout">
+          <paper-item>family</paper-item>
+          <paper-item>genus</paper-item>
+          <paper-item>species</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu-light>
       <paper-input label="family" value="{{taxon.family}}"></paper-input>
       <paper-input label="genus" value="{{taxon.genus}}"></paper-input>
       <paper-input label="species" value="{{taxon.species}}"></paper-input>
@@ -107,7 +104,7 @@
         },
         taxon: {
             type: Object,
-            value: {"taxonNo": 666, "rank":"species", "flora":"FZ", "family":"x", "genus":"y", "species":"z", "description":"leaves round"}
+            value: {"taxonNo": 666, "rank":"species", "flora_name":"FZ", "family":"x", "genus":"y", "species":"z", "description":"leaves round"}
         },
         floras: {
             type: Object,
