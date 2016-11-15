@@ -1,0 +1,50 @@
+<dom-module id="combo-ajax">
+<template>
+<style>
+      :host {
+        display: inline-block;
+        padding: 20px;
+      }
+</style>
+<iron-ajax  id="ajax" url="[[urlbase]][[rank]]" handle-as="json" last-response="{{items}}" params={{params}} auto verbose > </iron-ajax>
+
+<vaadin-combo-box label="[[label]]" items="[[items]]" value="{{value}}" ></vaadin-combo-box>
+</template>
+<script>
+    Polymer({
+        /* this is the element's prototype */
+        is: 'combo-ajax',
+        properties: {
+            label: {type: String,},
+            urlbase: {
+                type: String,
+                value: "http://flparser.azurewebsites.net/names/"
+            },
+            rank: {
+                type: String,
+                value: "family"
+            },
+            params: {
+                type: String,
+                value: function () {
+                    return '{"flora_name": "FTEA"}';
+                },
+                observer: '_paramsChanged',
+                notify: true
+            },
+            value: {
+                type: String,
+                notify: true
+            },
+        },
+        ready: function () {
+            // this.params = JSON.parse(this.params);
+        },
+
+        _paramsChanged: function (event) {
+            this.$.ajax.params = JSON.parse(this.params);
+        },
+    });
+</script>
+
+</dom-module>
