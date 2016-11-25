@@ -1,7 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
 <dom-module id="polymer-quill-app">
-  <template>
+<template id="polymer-quill-app">
 
     <style>
       :host {
@@ -24,7 +24,6 @@
     }
     .vertical-layout{
        @apply(--layout-vertical);
-       @apply(--layout-left);
     }
     .center-justified {
       @apply(--layout-center-justified);
@@ -41,7 +40,7 @@
 
     <iron-ajax id="descajax" method="GET"
           url="http://flparser.azurewebsites.net/eflora"
-          params={"genus":"[[taxon.genus]]","species":"[[taxon.species]]"}
+          params='[[ajaxParams]]'
           handle-as="json"
           on-response="_descback"
           last-response="{{descResponse}}"></iron-ajax>
@@ -52,13 +51,18 @@
 
       <vaadin-combo-box label="flora" items="[[floras]]" value="{{taxon.flora_name}}"></vaadin-combo-box>
       <vaadin-combo-box  label="rank" items='["family","genus","species"]' value="{{taxon.rank}}" ></vaadin-combo-box>
+      <template is="dom-if" if="{{taxon.flora_name}}">
       <combo-ajax label="family" rank="family" params='{"flora_name":"[[taxon.flora_name]]"}' value="{{taxon.family}}"></combo-ajax>
+      </template>
+      <template is="dom-if" if="{{taxon.flora_name}}">
       <combo-ajax label="genus" rank="genus" params='{"flora_name":"[[taxon.flora_name]]","family":"[[taxon.family]]"}'
                   value="{{taxon.genus}}"></combo-ajax>
+      </template>
+      <template is="dom-if" if="{{taxon.genus}}">
       <combo-ajax label="species" rank="species"
                   params='{"flora_name":"[[taxon.flora_name]]","genus":"[[taxon.genus]]"}'
                   value="{{taxon.species}}"></combo-ajax>
-
+      </template>
       <paper-button raised on-tap="_getDescription">
         Description
       </paper-button>
@@ -69,20 +73,15 @@
     </div>
 
     <vaadin-split-layout horizontal>
-
-      <div  style="">
-        <ag-grid style="height: 400px; display: block; " id="myGrid" class="ag-fresh"></ag-grid>
+      <div style="">
+        <ag-grid style="height: 100%; display: block" id="myGrid" class="ag-fresh"></ag-grid>
       </div>
 
-    <div id="editor"
-         on-text-change="_text_changed"
-         style="height: 400px; display: block; ">
+    <div id="editor" on-text-change="_text_changed" style="height: 100%; display: block">
       <quill-element id="ed" theme="bubble"></quill-element>
     </div>
 
     </vaadin-split-layout>
-
-    <div>[[taxon.description]]</div>
 
   </template>
 
@@ -102,17 +101,22 @@
         },
         taxon: {
             type: Object,
-            value: {"rank":"species", "flora_name":"FZ", "family":"x", "genus":"y", "species":"z", "description":"leaves round"}
+            notify: true,
+            value: function() { return {"flora_name": "FZ", "rank": "family", "family": "", "genus": "", "species": "", "description": "leaves round"} ;},
         },
         floras: {
             type: Array,
             value: floralist},
 
+        ajaxParams: {type: Object,
+            computed: '_getAjaxBody(taxon.flora_name, taxon.rank, taxon.family, taxon.genus, taxon.species)'},
+
       },
       observers: [
         '_descriptionChanged(taxon.description)'
       ],
-        ready: function () {
+
+      ready: function () {
 
         agGrid.initialiseAgGridWithWebComponents();
 
@@ -127,12 +131,15 @@
         };
 
         var myGrid = this.$$('#myGrid');
-        myGrid.setGridOptions(gridOptions)
+        myGrid.setGridOptions(gridOptions);
 
         this.scopeSubtree(this.$.editor, false);
         var myEd = this.$.ed;
         myEd.setText(this.taxon.description);
         },
+
+      _getAjaxBody: function(flora_name, rank, family, genus, species) {
+            return {flora_name: flora_name, rank: rank, family: family, genus: genus, species: species}; },
 
       _rowSelectedFunc: function (event) {
         // window.alert("row " + event.node.data.start + " selected = " + event.node.selected);
@@ -146,7 +153,7 @@
         },
 
       _descriptionChanged: function(changeRecord) {
-        var myEd = document.querySelector('quill-element');
+        let myEd = document.querySelector('quill-element');
         if (myEd) {myEd.setText(changeRecord);};
         },
 
@@ -167,8 +174,9 @@
         },
 
       _descback: function(event) {
-        this.taxon.description = this.descResponse[0].description
+        this.set('taxon.description', 'Plant: ' + this.descResponse[0].description);
         },
+
     });
 </script>
 
