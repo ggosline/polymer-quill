@@ -28,6 +28,12 @@
     .center-justified {
       @apply(--layout-center-justified);
     }
+    #splitter {
+        height: 600px;
+        border: 1px solid #ddd;
+        margin: 20px 0;
+        background: #fff;
+    }
     </style>
 
     <iron-ajax id="parseajax" method="POST"
@@ -73,7 +79,7 @@
 
     </div>
 
-    <vaadin-split-layout horizontal>
+    <vaadin-split-layout id="splitter" horizontal>
       <div style="">
         <ag-grid style="height: 100%; display: block" id="myGrid" class="ag-fresh"></ag-grid>
       </div>
